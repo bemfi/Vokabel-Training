@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabeltrainer</title>
+    <link rel="icon" href="favicon.ico" sizes="48x48">
+    <link rel="icon" href="img/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        // Theme vor dem Rendern setzen (verhindert Aufblitzen)
+        document.documentElement.dataset.theme =
+            localStorage.getItem("vt-theme")
+            || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    </script>
+</head>
+<body>
+
+<header>
+    <h1><img src="img/hummel-logo.png" alt="IT Hummel" class="brand-logo"> <span data-i18n="appTitle">Vokabeltrainer</span> <span class="brand-sub">by IT Hummel</span></h1>
+    <div class="header-controls">
+        <button id="btn-lang" class="btn btn-small btn-ghost" title="Sprache / Language">🌐 <span id="lang-label">EN</span></button>
+        <button id="btn-theme" class="btn btn-small btn-ghost" title="Dark / Light">🌙</button>
+        <div id="user-info" class="hidden">
+            <span id="username-display"></span>
+            <button id="btn-logout" class="btn btn-small btn-secondary" data-i18n="logout">Abmelden</button>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    <!-- ===================== LOGIN / REGISTRIERUNG ===================== -->
+    <section id="view-auth" class="view">
+        <div class="card auth-card">
+            <div class="tabs">
+                <button class="tab active" data-tab="login" data-i18n="login">Anmelden</button>
+                <button class="tab" data-tab="register" data-i18n="register">Registrieren</button>
+            </div>
+            <form id="form-auth">
+                <label><span data-i18n="email">E-Mail</span>
+                    <input type="email" id="auth-email" required autocomplete="email" maxlength="190">
+                </label>
+                <label id="wrap-auth-username" class="hidden"><span data-i18n="username">Benutzername</span>
+                    <input type="text" id="auth-username" autocomplete="username" maxlength="50"
+                           pattern="[A-Za-z0-9_\-.]{3,50}">
+                </label>
+                <label><span data-i18n="password">Passwort</span>
+                    <input type="password" id="auth-password" required autocomplete="current-password" minlength="8">
+                </label>
+                <p class="hint hidden" id="password-hint" data-i18n="passwordHint">Mindestens 8 Zeichen, mit Buchstabe und Zahl.</p>
+                <button type="submit" class="btn btn-primary btn-block" id="btn-auth-submit" data-i18n="login">Anmelden</button>
+                <p id="auth-error" class="error hidden"></p>
+                <p class="auth-links">
+                    <a href="#" id="link-forgot" data-i18n="forgotPassword">Passwort vergessen?</a>
+                </p>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===================== PASSWORT VERGESSEN ===================== -->
+    <section id="view-forgot" class="view hidden">
+        <div class="card auth-card">
+            <h2 data-i18n="resetTitle">Passwort zurücksetzen</h2>
+            <p class="hint" data-i18n="resetInfo">Gib deine E-Mail-Adresse ein. Du erhältst einen Link zum Zurücksetzen.</p>
+            <form id="form-forgot">
+                <label><span data-i18n="email">E-Mail</span>
+                    <input type="email" id="forgot-email" required autocomplete="email">
+                </label>
+                <button type="submit" class="btn btn-primary btn-block" data-i18n="sendResetLink">Link senden</button>
+                <p id="forgot-message" class="hint hidden"></p>
+                <p class="auth-links"><a href="#" id="link-back-login" data-i18n="backToLogin">← Zurück zur Anmeldung</a></p>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===================== NEUES PASSWORT SETZEN ===================== -->
+    <section id="view-reset" class="view hidden">
+        <div class="card auth-card">
+            <h2 data-i18n="newPasswordTitle">Neues Passwort setzen</h2>
+            <form id="form-reset">
+                <label><span data-i18n="newPassword">Neues Passwort</span>
+                    <input type="password" id="reset-password" required autocomplete="new-password" minlength="8">
+                </label>
+                <label><span data-i18n="repeatPassword">Passwort wiederholen</span>
+                    <input type="password" id="reset-password2" required autocomplete="new-password" minlength="8">
+                </label>
+                <p class="hint" data-i18n="passwordHint">Mindestens 8 Zeichen, mit Buchstabe und Zahl.</p>
+                <button type="submit" class="btn btn-primary btn-block" data-i18n="savePassword">Passwort speichern</button>
+                <p id="reset-message" class="error hidden"></p>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===================== DATENSÄTZE ===================== -->
+    <section id="view-datasets" class="view hidden">
+        <div class="section-head">
+            <h2 data-i18n="myDatasets">Meine Datensätze</h2>
+            <button id="btn-new-dataset" class="btn btn-primary" data-i18n="newDataset">+ Neuer Datensatz</button>
+        </div>
+        <div id="dataset-list" class="dataset-grid"></div>
+
+        <!-- Formular neuer/bearbeiten Datensatz -->
+        <div id="dataset-form-wrap" class="card hidden">
+            <h3 id="dataset-form-title" data-i18n="newDatasetTitle">Neuer Datensatz</h3>
+            <form id="form-dataset">
+                <input type="hidden" id="ds-id">
+                <label><span data-i18n="datasetName">Name des Datensatzes</span>
+                    <input type="text" id="ds-name" required maxlength="100" data-i18n-placeholder="datasetNamePh">
+                </label>
+                <div class="row">
+                    <label><span data-i18n="language1">Sprache 1</span> *
+                        <input type="text" id="ds-lang1" required maxlength="40" placeholder="Deutsch">
+                    </label>
+                    <label><span data-i18n="language2">Sprache 2</span> *
+                        <input type="text" id="ds-lang2" required maxlength="40" placeholder="Italiano">
+                    </label>
+                    <label><span data-i18n="language3">Sprache 3 (optional)</span>
+                        <input type="text" id="ds-lang3" maxlength="40" placeholder="English">
+                    </label>
+                </div>
+                <div class="row">
+                    <label><span data-i18n="requiredCorrect">Richtig-Antworten bis "gekonnt" (pro Richtung)</span>
+                        <input type="number" id="ds-required" min="1" max="20" value="3">
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="ds-reset" checked>
+                        <span data-i18n="resetOnWrong">Zähler bei Fehler auf 0 zurücksetzen</span>
+                    </label>
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary" data-i18n="save">Speichern</button>
+                    <button type="button" id="btn-dataset-cancel" class="btn btn-secondary" data-i18n="cancel">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- ===================== VOKABELN VERWALTEN ===================== -->
+    <section id="view-vocab" class="view hidden">
+        <div class="section-head">
+            <button id="btn-back-datasets" class="btn btn-secondary btn-small" data-i18n="back">← Zurück</button>
+            <h2 id="vocab-title"></h2>
+        </div>
+
+        <div class="card">
+            <h3 data-i18n="addVocab">Vokabel hinzufügen</h3>
+            <form id="form-vocab" class="row">
+                <input type="hidden" id="v-id">
+                <label><span id="lbl-word1">Wort 1</span>
+                    <input type="text" id="v-word1" required maxlength="255">
+                </label>
+                <label><span id="lbl-word2">Wort 2</span>
+                    <input type="text" id="v-word2" required maxlength="255">
+                </label>
+                <label id="wrap-word3"><span id="lbl-word3">Wort 3</span>
+                    <input type="text" id="v-word3" maxlength="255">
+                </label>
+                <label><span data-i18n="note">Notiz</span>
+                    <input type="text" id="v-note" maxlength="255">
+                </label>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary" id="btn-vocab-submit" data-i18n="add">Hinzufügen</button>
+                    <button type="button" id="btn-vocab-cancel" class="btn btn-secondary hidden" data-i18n="cancel">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 data-i18n="importTitle">Excel / CSV importieren</h3>
+            <p class="hint" data-i18n="importHint">
+                Spaltenaufbau: Spalte A = Sprache 1, Spalte B = Sprache 2,
+                Spalte C = Sprache 3 (optional), Spalte D = Notiz (optional).
+                Erste Zeile darf Überschriften enthalten.
+            </p>
+            <input type="file" id="file-import" accept=".xlsx,.xls,.csv">
+            <p id="import-result" class="hint"></p>
+        </div>
+
+        <div class="card">
+            <div class="section-head">
+                <h3><span data-i18n="vocabList">Vokabelliste</span> (<span id="vocab-count">0</span>)</h3>
+            </div>
+            <div class="table-wrap">
+                <table id="vocab-table">
+                    <thead><tr id="vocab-thead-row"></tr></thead>
+                    <tbody id="vocab-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== TRAINING ===================== -->
+    <section id="view-training" class="view hidden">
+        <div class="section-head">
+            <button id="btn-back-training" class="btn btn-secondary btn-small" data-i18n="back">← Zurück</button>
+            <h2 id="training-title"></h2>
+        </div>
+
+        <div class="card" id="training-settings">
+            <h3 data-i18n="directions">Abfragerichtungen</h3>
+            <div id="direction-checkboxes" class="direction-grid"></div>
+            <button id="btn-start-training" class="btn btn-accent" data-i18n="startTraining">Training starten</button>
+        </div>
+
+        <div class="card hidden" id="training-card">
+            <div id="training-progressbar"><div id="training-progress-inner"></div></div>
+            <p class="training-meta">
+                <span id="training-direction-label"></span> ·
+                <span data-i18n="open">Offen</span>: <span id="training-open"></span>
+            </p>
+            <p class="training-question" id="training-question"></p>
+            <p class="hint" id="training-note"></p>
+            <form id="form-answer">
+                <input type="text" id="training-answer" autocomplete="off" data-i18n-placeholder="answerPh">
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary" id="btn-check" data-i18n="check">Prüfen</button>
+                    <button type="button" class="btn btn-secondary hidden" id="btn-next" data-i18n="next">Weiter →</button>
+                </div>
+            </form>
+            <div id="training-feedback" class="hidden"></div>
+        </div>
+
+        <div class="card hidden" id="training-done">
+            <h3 data-i18n="doneTitle">🎉 Geschafft!</h3>
+            <p id="training-done-text"></p>
+            <div class="btn-row">
+                <button class="btn btn-secondary" id="btn-reset-progress" data-i18n="resetProgress">Fortschritt zurücksetzen</button>
+                <button class="btn btn-primary" id="btn-done-back" data-i18n="toOverview">Zur Übersicht</button>
+            </div>
+        </div>
+
+        <div class="card" id="training-stats">
+            <h3 data-i18n="progress">Fortschritt</h3>
+            <p id="stats-text">–</p>
+        </div>
+    </section>
+
+</main>
+
+<script src="js/app.js"></script>
+</body>
+</html>
