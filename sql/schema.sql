@@ -1,12 +1,25 @@
 -- Vokabeltrainer – Datenbankschema für MySQL/MariaDB (All-Inkl kompatibel)
 -- In phpMyAdmin importieren oder per Kommandozeile ausführen.
+--
+-- MIGRATION für bestehende Installationen (users-Tabelle existiert schon):
+--   ALTER TABLE users
+--       ADD COLUMN activation_token_hash CHAR(64) DEFAULT NULL,
+--       ADD COLUMN activated_at DATETIME DEFAULT NULL,
+--       ADD INDEX idx_activation (activation_token_hash);
+--   -- Bestehende Konten als aktiviert markieren:
+--   UPDATE users SET activated_at = NOW() WHERE activated_at IS NULL;
 
+-- Konten sind erst nach E-Mail-Bestätigung aktiv (activated_at gesetzt).
+-- Nicht aktivierte Konten werden nach 48h automatisch gelöscht.
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(190) NOT NULL UNIQUE,
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    activation_token_hash CHAR(64) DEFAULT NULL,
+    activated_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_activation (activation_token_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Passwort-Reset: nur der SHA-256-Hash des Tokens wird gespeichert

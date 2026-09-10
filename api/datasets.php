@@ -48,7 +48,7 @@ switch ($action) {
         $resetOnWrong = !empty($body['reset_on_wrong']) ? 1 : 0;
 
         if ($name === '' || $lang1 === '' || $lang2 === '') {
-            json_error('Name, Sprache 1 und Sprache 2 sind Pflichtfelder.');
+            json_error('Name, Sprache 1 und Sprache 2 sind Pflichtfelder.', 400, 'dataset_fields_missing');
         }
 
         $stmt = db()->prepare(
@@ -70,7 +70,7 @@ switch ($action) {
         $resetOnWrong = !empty($body['reset_on_wrong']) ? 1 : 0;
 
         if ($name === '' || $lang1 === '' || $lang2 === '') {
-            json_error('Name, Sprache 1 und Sprache 2 sind Pflichtfelder.');
+            json_error('Name, Sprache 1 und Sprache 2 sind Pflichtfelder.', 400, 'dataset_fields_missing');
         }
 
         $stmt = db()->prepare(
@@ -99,5 +99,5 @@ switch ($action) {
         json_response(['ok' => true]);
 
     default:
-        json_error('Unbekannte Aktion.', 404);
+        json_error('Unbekannte Aktion.', 404, 'unknown_action');
 }

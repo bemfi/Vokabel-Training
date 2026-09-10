@@ -107,7 +107,7 @@ switch ($action) {
         $answer = trim((string) ($body['answer'] ?? ''));
 
         if (!preg_match('/^[123]>[123]$/', $direction)) {
-            json_error('Ungültige Richtung.');
+            json_error('Ungültige Richtung.', 400, 'direction_invalid');
         }
 
         $stmt = db()->prepare(
@@ -118,7 +118,7 @@ switch ($action) {
         $stmt->execute([$vocabId, $userId]);
         $vocab = $stmt->fetch();
         if (!$vocab) {
-            json_error('Vokabel nicht gefunden.', 404);
+            json_error('Vokabel nicht gefunden.', 404, 'vocab_not_found');
         }
 
         [, $to] = explode('>', $direction);
@@ -212,5 +212,5 @@ switch ($action) {
         ]);
 
     default:
-        json_error('Unbekannte Aktion.', 404);
+        json_error('Unbekannte Aktion.', 404, 'unknown_action');
 }

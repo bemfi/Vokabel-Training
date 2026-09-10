@@ -10,7 +10,8 @@ Läuft auf klassischem PHP-Webhosting (**All-Inkl**-kompatibel) – **kein Frame
 
 ### Nutzer & Konten
 - 👥 **Mehrere Nutzer** mit E-Mail-Registrierung/Login (Passwörter bcrypt-gehasht)
-- 🔑 **Passwort-Reset per E-Mail** (Token-Link, 1 Stunde gültig, Einmalverwendung)
+- ✉️ **E-Mail-Aktivierung**: Konto muss per Bestätigungslink aktiviert werden; nicht aktivierte Konten werden nach 48 h automatisch gelöscht
+- 🔑 **Passwort-Reset per E-Mail** (Token-Link, 1 Stunde gültig, Einmalverwendung; neues Passwort muss sich vom alten unterscheiden)
 
 ### Lernen
 - 🗂️ **Beliebig viele Datensätze** pro Nutzer (z.B. "Italienisch Lektion 1") mit Fortschrittsbalken
@@ -86,9 +87,11 @@ Vokabel-Training/
 
 Alle Endpunkte antworten mit JSON. Schreibende Aktionen (POST) benötigen den `X-CSRF-Token`-Header (Token kommt von `auth.php?action=me`).
 
+**Fehlerformat:** `{ "error": "Text", "code": "maschinen_lesbarer_code" }` – das Frontend übersetzt den `code` in eine verständliche, zweisprachige Meldung mit Handlungsempfehlung (Wörterbuch `ERRORS` in `js/app.js`). Netzwerk- und Serverfehler ohne Code erhalten generische, aber hilfreiche Texte.
+
 | Endpunkt | Aktionen |
 |---|---|
-| `api/auth.php` | `register`, `login`, `logout`, `me`, `request_reset`, `reset_password`, `delete_account` |
+| `api/auth.php` | `register`, `activate`, `login`, `logout`, `me`, `request_reset`, `reset_password`, `delete_account` |
 | `api/datasets.php` | `list`, `create`, `update`, `delete`, `reset_progress` |
 | `api/vocab.php` | `list`, `add`, `update`, `delete`, `import` |
 | `api/training.php` | `next`, `answer`, `stats` |
@@ -241,7 +244,8 @@ api/            (kompletter Ordner – inkl. deiner config.php und der .htaccess
 3. **Config-Schutz testen:** `https://vokabeln.deine-domain.de/api/config.php` aufrufen → es muss **403 Forbidden** erscheinen (nicht der Inhalt!).
 4. **Registrieren:** Konto mit deiner echten E-Mail anlegen (Passwort: min. 8 Zeichen mit Buchstabe + Zahl).
 5. **Datensatz anlegen**, 2–3 Vokabeln eintragen, Training starten.
-6. **Passwort-Reset testen:** Abmelden → „Passwort vergessen?" → E-Mail eingeben → Mail sollte innerhalb weniger Minuten ankommen (auch im Spam-Ordner nachsehen) → Link öffnen → neues Passwort setzen.
+6. **Registrierung + Aktivierung testen:** Nach der Registrierung kommt eine Aktivierungs-Mail – Link öffnen, dann anmelden (vorher ist der Login gesperrt).
+7. **Passwort-Reset testen:** Abmelden → „Passwort vergessen?" → E-Mail eingeben → Mail sollte innerhalb weniger Minuten ankommen (auch im Spam-Ordner nachsehen) → Link öffnen → neues (anderes!) Passwort setzen.
 
 #### Wenn etwas nicht funktioniert
 
@@ -334,6 +338,7 @@ Hinweise für spätere Anpassungen – wo was zu ändern ist:
 | Ich möchte … | Datei / Ort |
 |---|---|
 | Texte/Übersetzungen ändern oder Sprache ergänzen | `js/app.js` → `I18N`-Objekt (plus `data-i18n`-Attribute in `index.html`) |
+| Fehlermeldungen anpassen | `js/app.js` → `ERRORS`-Wörterbuch; neue Codes im Backend via `json_error(text, status, code)` |
 | Farben/Design anpassen | `css/style.css` → CSS-Variablen in `:root` und `[data-theme="dark"]` |
 | Neuen API-Endpunkt hinzufügen | Neue `case`-Zeile in passender `api/*.php`; gemeinsame Helfer in `bootstrap.php` |
 | Passwort-Regeln ändern | `api/auth.php` → `validate_password()` |
@@ -357,7 +362,8 @@ Hinweise für spätere Anpassungen – wo was zu ändern ist:
 - Alle SQL-Abfragen mit Prepared Statements (kein SQL-Injection-Risiko)
 - **CSRF-Schutz**: alle schreibenden Anfragen benötigen ein Session-gebundenes Token (`X-CSRF-Token`-Header)
 - **Brute-Force-Schutz**: max. 8 Login-Versuche pro 15 Minuten (pro E-Mail und IP), max. 3 Reset-Anfragen pro Stunde
-- **Passwort-Reset**: kryptografisch sicheres Token (256 Bit), nur als SHA-256-Hash gespeichert, 1 Stunde gültig, Einmalverwendung; keine User-Enumeration (Antwort immer gleich)
+- **E-Mail-Aktivierung**: Konten sind erst nach Bestätigung nutzbar; verwaiste Registrierungen werden nach 48 h automatisch gelöscht (Datenminimierung)
+- **Passwort-Reset**: kryptografisch sicheres Token (256 Bit), nur als SHA-256-Hash gespeichert, 1 Stunde gültig, Einmalverwendung; neues Passwort darf nicht dem alten entsprechen; keine User-Enumeration (Antwort immer gleich)
 - Session-Cookies: `HttpOnly`, `SameSite=Strict`, `Secure` (bei HTTPS), `session_regenerate_id` bei Login
 - Security-Header: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Cache-Control: no-store`
 - `config.php` per `.htaccess` vor direktem Zugriff geschützt

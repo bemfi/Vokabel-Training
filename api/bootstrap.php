@@ -36,7 +36,7 @@ function config(): array
     if ($cfg === null) {
         $configFile = __DIR__ . '/config.php';
         if (!file_exists($configFile)) {
-            json_error('config.php fehlt. Bitte config.example.php kopieren und ausfüllen.', 500);
+            json_error('config.php fehlt. Bitte config.example.php kopieren und ausfüllen.', 500, 'config_missing');
         }
         $cfg = require $configFile;
     }
@@ -59,7 +59,7 @@ function db(): PDO
                 ]
             );
         } catch (PDOException $e) {
-            json_error('Datenbankverbindung fehlgeschlagen.', 500);
+            json_error('Datenbankverbindung fehlgeschlagen.', 500, 'db_error');
         }
     }
     return $pdo;
@@ -72,9 +72,14 @@ function json_response(array $data, int $status = 200): void
     exit;
 }
 
-function json_error(string $message, int $status = 400): void
+/** Fehlerantwort; $code ist ein maschinenlesbarer Schlüssel für lokalisierte Frontend-Texte. */
+function json_error(string $message, int $status = 400, ?string $code = null): void
 {
-    json_response(['error' => $message], $status);
+    $payload = ['error' => $message];
+    if ($code !== null) {
+        $payload['code'] = $code;
+    }
+    json_response($payload, $status);
 }
 
 function request_body(): array
@@ -105,14 +110,14 @@ function require_csrf(): void
     }
     $sent = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
     if ($sent === '' || empty($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $sent)) {
-        json_error('Ungültiges CSRF-Token. Bitte Seite neu laden.', 403);
+        json_error('Ungültiges CSRF-Token. Bitte Seite neu laden.', 403, 'csrf_invalid');
     }
 }
 
 function require_login(): int
 {
     if (!isset($_SESSION['user_id'])) {
-        json_error('Nicht angemeldet.', 401);
+        json_error('Nicht angemeldet.', 401, 'not_logged_in');
     }
     require_csrf();
     return (int) $_SESSION['user_id'];
@@ -125,7 +130,7 @@ function require_dataset_owner(int $datasetId, int $userId): array
     $stmt->execute([$datasetId, $userId]);
     $dataset = $stmt->fetch();
     if (!$dataset) {
-        json_error('Datensatz nicht gefunden.', 404);
+        json_error('Datensatz nicht gefunden.', 404, 'dataset_not_found');
     }
     return $dataset;
 }
@@ -147,7 +152,7 @@ function check_rate_limit(string $identifier, int $limit = 8, int $windowMinutes
     );
     $stmt->execute([$identifier, client_ip(), $windowMinutes]);
     if ((int) $stmt->fetchColumn() >= $limit) {
-        json_error('Zu viele Versuche. Bitte in 15 Minuten erneut versuchen.', 429);
+        json_error('Zu viele Versuche. Bitte in 15 Minuten erneut versuchen.', 429, 'rate_limited');
     }
 }
 

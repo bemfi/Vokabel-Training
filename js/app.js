@@ -67,6 +67,7 @@ const I18N = {
         wrongFb: (e) => `❌ Falsch. Richtige Antwort: "${e}"`,
         resetProgressConfirm: "Gesamten Lernfortschritt dieses Datensatzes zurücksetzen?",
         statsText: (mw, vt, cm, ct) => `${mw} von ${vt} Vokabeln vollständig gekonnt · ${cm} von ${ct} Richtungs-Kombinationen gemeistert`,
+        activationSent: "Konto angelegt! Bitte bestätige deine E-Mail-Adresse über den zugesendeten Link (48 Stunden gültig), bevor du dich anmeldest.",
         imprint: "Impressum", privacy: "Datenschutz",
         imprintLaw: "Angaben gemäß § 5 DDG", contact: "Kontakt",
         imprintNote: "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV: Benjamin Fischer (Anschrift wie oben)",
@@ -122,6 +123,7 @@ const I18N = {
         wrongFb: (e) => `❌ Wrong. Correct answer: "${e}"`,
         resetProgressConfirm: "Reset all learning progress for this dataset?",
         statsText: (mw, vt, cm, ct) => `${mw} of ${vt} words fully mastered · ${cm} of ${ct} direction combinations mastered`,
+        activationSent: "Account created! Please confirm your email address via the link we sent you (valid for 48 hours) before signing in.",
         imprint: "Legal notice", privacy: "Privacy policy",
         imprintLaw: "Information according to § 5 DDG (German law)", contact: "Contact",
         imprintNote: "Responsible for content according to § 18 (2) MStV: Benjamin Fischer (address as above)",
@@ -154,7 +156,7 @@ const PRIVACY_HTML = {
         <h3>6. Keine Drittanbieter-Dienste</h3>
         <p>Es werden keine Analyse-Tools, Tracking-Dienste, externen Fonts oder CDNs eingebunden. Alle Skripte werden lokal ausgeliefert.</p>
         <h3>7. Speicherdauer und Löschung</h3>
-        <p>Deine Daten bleiben gespeichert, solange dein Konto besteht. Du kannst dein Konto jederzeit selbst löschen (Button „Konto löschen“ in der Datensatz-Übersicht) – dabei werden alle Vokabeln, Lernstände und Kontodaten unwiderruflich entfernt.</p>
+        <p>Deine Daten bleiben gespeichert, solange dein Konto besteht. Du kannst dein Konto jederzeit selbst löschen (Button „Konto löschen“ in der Datensatz-Übersicht) – dabei werden alle Vokabeln, Lernstände und Kontodaten unwiderruflich entfernt. Konten, die nicht innerhalb von 48 Stunden per E-Mail-Link aktiviert werden, werden automatisch gelöscht.</p>
         <h3>8. Deine Rechte</h3>
         <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO) sowie das Recht auf Beschwerde bei einer Aufsichtsbehörde (Art. 77 DSGVO). Wende dich dazu an die oben genannte Kontaktadresse.</p>`,
     en: `
@@ -178,9 +180,83 @@ const PRIVACY_HTML = {
         <h3>6. No third-party services</h3>
         <p>No analytics, tracking services, external fonts or CDNs are used. All scripts are served locally.</p>
         <h3>7. Retention and deletion</h3>
-        <p>Your data is stored as long as your account exists. You can delete your account yourself at any time (“Delete account” button in the dataset overview) – this irreversibly removes all vocabulary, progress and account data.</p>
+        <p>Your data is stored as long as your account exists. You can delete your account yourself at any time (“Delete account” button in the dataset overview) – this irreversibly removes all vocabulary, progress and account data. Accounts not activated via the email link within 48 hours are deleted automatically.</p>
         <h3>8. Your rights</h3>
         <p>You have the right of access, rectification, erasure, restriction of processing, data portability and objection (Art. 15–21 GDPR) as well as the right to lodge a complaint with a supervisory authority (Art. 77 GDPR). Please use the contact address above.</p>`,
+};
+
+/* Lokalisierte, handlungsorientierte Fehlertexte zu Backend-Fehler-Codes */
+const ERRORS = {
+    de: {
+        // Auth & Konto
+        email_invalid: "Bitte gib eine gültige E-Mail-Adresse ein (z.B. name@beispiel.de).",
+        email_taken: "Diese E-Mail-Adresse ist bereits registriert. Möchtest du dich anmelden oder das Passwort zurücksetzen?",
+        username_invalid: "Der Benutzername muss 3–50 Zeichen lang sein und darf nur Buchstaben, Zahlen sowie _ - . enthalten.",
+        username_taken: "Dieser Benutzername ist schon vergeben – bitte wähle einen anderen.",
+        password_too_short: "Das Passwort ist zu kurz: mindestens 8 Zeichen.",
+        password_too_weak: "Das Passwort braucht mindestens einen Buchstaben und eine Zahl.",
+        password_same_as_old: "Das neue Passwort darf nicht dein altes sein – bitte wähle ein anderes.",
+        password_wrong: "Das eingegebene Passwort ist falsch.",
+        credentials_missing: "Bitte E-Mail und Passwort eingeben.",
+        login_failed: "E-Mail oder Passwort ist falsch. Tipp: über „Passwort vergessen?“ kannst du ein neues setzen.",
+        not_activated: "Dein Konto ist noch nicht aktiviert. Bitte öffne den Link aus der Aktivierungs-E-Mail (auch im Spam-Ordner nachsehen).",
+        activation_invalid: "Dieser Aktivierungslink ist ungültig. Bitte nutze den Link aus der E-Mail oder registriere dich neu.",
+        activation_expired: "Dieser Aktivierungslink ist abgelaufen oder wurde schon benutzt. Bitte registriere dich erneut.",
+        reset_invalid: "Dieser Reset-Link ist ungültig. Bitte fordere über „Passwort vergessen?“ einen neuen an.",
+        reset_expired: "Dieser Reset-Link ist abgelaufen oder wurde schon benutzt. Bitte fordere einen neuen an.",
+        rate_limited: "Zu viele Versuche. Bitte warte 15 Minuten und versuche es dann erneut.",
+        // Session & Technik
+        not_logged_in: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+        csrf_invalid: "Die Sitzung war veraltet. Bitte lade die Seite neu (F5) und versuche es noch einmal.",
+        config_missing: "Der Server ist noch nicht eingerichtet (config.php fehlt). Bitte wende dich an den Administrator.",
+        db_error: "Die Datenbank ist gerade nicht erreichbar. Bitte versuche es in ein paar Minuten erneut.",
+        unknown_action: "Diese Funktion ist nicht verfügbar. Bitte lade die Seite neu.",
+        // Inhalte
+        dataset_not_found: "Dieser Datensatz existiert nicht mehr. Bitte lade die Seite neu.",
+        dataset_fields_missing: "Bitte fülle Name, Sprache 1 und Sprache 2 aus.",
+        vocab_not_found: "Diese Vokabel existiert nicht mehr. Bitte lade die Liste neu.",
+        vocab_fields_missing: "Bitte fülle mindestens die ersten beiden Wörter aus.",
+        no_third_language: "Dieser Datensatz hat keine dritte Sprache – lass das dritte Feld leer oder ergänze die Sprache in den Einstellungen.",
+        import_empty: "Die Datei enthält keine importierbaren Zeilen. Prüfe, ob Spalte A und B gefüllt sind.",
+        import_too_large: "Die Datei ist zu groß: maximal 5000 Zeilen pro Import. Bitte teile sie auf.",
+        direction_invalid: "Ungültige Abfragerichtung – bitte lade die Seite neu.",
+        // Frontend-eigene Fehler
+        network_error: "Keine Verbindung zum Server. Prüfe deine Internetverbindung und versuche es erneut.",
+        server_error: "Auf dem Server ist ein unerwarteter Fehler aufgetreten. Bitte versuche es später erneut.",
+    },
+    en: {
+        email_invalid: "Please enter a valid email address (e.g. name@example.com).",
+        email_taken: "This email address is already registered. Would you like to sign in or reset your password?",
+        username_invalid: "The username must be 3–50 characters and may only contain letters, numbers and _ - .",
+        username_taken: "This username is already taken – please choose another one.",
+        password_too_short: "The password is too short: at least 8 characters.",
+        password_too_weak: "The password needs at least one letter and one number.",
+        password_same_as_old: "The new password must be different from your old one – please choose another.",
+        password_wrong: "The password you entered is incorrect.",
+        credentials_missing: "Please enter email and password.",
+        login_failed: "Email or password is incorrect. Tip: use “Forgot password?” to set a new one.",
+        not_activated: "Your account is not activated yet. Please open the link from the activation email (also check your spam folder).",
+        activation_invalid: "This activation link is invalid. Please use the link from the email or sign up again.",
+        activation_expired: "This activation link has expired or was already used. Please sign up again.",
+        reset_invalid: "This reset link is invalid. Please request a new one via “Forgot password?”.",
+        reset_expired: "This reset link has expired or was already used. Please request a new one.",
+        rate_limited: "Too many attempts. Please wait 15 minutes and try again.",
+        not_logged_in: "Your session has expired. Please sign in again.",
+        csrf_invalid: "Your session was outdated. Please reload the page (F5) and try again.",
+        config_missing: "The server is not set up yet (config.php missing). Please contact the administrator.",
+        db_error: "The database is currently unavailable. Please try again in a few minutes.",
+        unknown_action: "This function is not available. Please reload the page.",
+        dataset_not_found: "This dataset no longer exists. Please reload the page.",
+        dataset_fields_missing: "Please fill in name, language 1 and language 2.",
+        vocab_not_found: "This word no longer exists. Please reload the list.",
+        vocab_fields_missing: "Please fill in at least the first two words.",
+        no_third_language: "This dataset has no third language – leave the third field empty or add the language in the settings.",
+        import_empty: "The file contains no importable rows. Check that columns A and B are filled.",
+        import_too_large: "The file is too large: maximum 5000 rows per import. Please split it.",
+        direction_invalid: "Invalid quiz direction – please reload the page.",
+        network_error: "Cannot reach the server. Check your internet connection and try again.",
+        server_error: "An unexpected error occurred on the server. Please try again later.",
+    },
 };
 
 let lang = localStorage.getItem("vt-lang") || (navigator.language.startsWith("de") ? "de" : "en");
@@ -220,17 +296,41 @@ const $ = (id) => document.getElementById(id);
 
 let csrfToken = "";
 
+/** Fehler-Code → lokalisierter, handlungsorientierter Text (Fallback: Server-Text). */
+function errorMessage(code, serverText, status) {
+    const dict = ERRORS[lang] ?? ERRORS.de;
+    if (code && dict[code]) return dict[code];
+    if (serverText) return serverText;
+    return status >= 500 ? dict.server_error : dict.unknown_action;
+}
+
 async function api(path, options = {}) {
     const headers = { "Content-Type": "application/json" };
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
-    const res = await fetch(`${API}/${path}`, {
-        headers,
-        credentials: "same-origin",
-        ...options,
-    });
-    const data = await res.json().catch(() => ({}));
+
+    let res;
+    try {
+        res = await fetch(`${API}/${path}`, {
+            headers,
+            credentials: "same-origin",
+            ...options,
+        });
+    } catch (_) {
+        // fetch wirft nur bei Netzwerkproblemen (offline, DNS, Server aus)
+        throw new Error((ERRORS[lang] ?? ERRORS.de).network_error);
+    }
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch (_) { /* keine/kaputte JSON-Antwort */ }
+
     if (!res.ok) {
-        throw new Error(data.error || `Error (${res.status})`);
+        throw new Error(errorMessage(data?.code, data?.error, res.status));
+    }
+    // Server muss valides JSON liefern – sonst stimmt am Deployment etwas nicht
+    if (data === null || typeof data !== "object") {
+        throw new Error((ERRORS[lang] ?? ERRORS.de).server_error);
     }
     if (data.csrf) csrfToken = data.csrf;
     return data;
@@ -282,6 +382,15 @@ document.querySelectorAll(".tab").forEach((tab) => {
     });
 });
 
+/** Meldung im Auth-Formular anzeigen (error = rot, sonst neutral). */
+function showAuthMessage(text, isError = true) {
+    const el = $("auth-error");
+    el.textContent = text;
+    el.classList.toggle("error", isError);
+    el.classList.toggle("hint", !isError);
+    el.classList.remove("hidden");
+}
+
 $("form-auth").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("auth-error").classList.add("hidden");
@@ -294,17 +403,34 @@ $("form-auth").addEventListener("submit", async (e) => {
             payload.username = $("auth-username").value;
         }
         const data = await post(`auth.php?action=${authMode === "login" ? "login" : "register"}`, payload);
+        if (data.needsActivation) {
+            // Registrierung: erst E-Mail bestätigen, kein Auto-Login
+            $("form-auth").reset();
+            showAuthMessage(t("activationSent"), false);
+            return;
+        }
+        $("form-auth").reset();
         onLoggedIn(data.username);
     } catch (err) {
-        $("auth-error").textContent = err.message;
-        $("auth-error").classList.remove("hidden");
+        showAuthMessage(err.message);
     }
 });
+
+/** Alle Auth-Formulare leeren (kein Zurückbleiben von Zugangsdaten). */
+function clearAuthForms() {
+    $("form-auth").reset();
+    $("form-forgot").reset();
+    $("form-reset").reset();
+    $("auth-error").classList.add("hidden");
+    $("forgot-message").classList.add("hidden");
+    $("reset-message").classList.add("hidden");
+}
 
 $("btn-logout").addEventListener("click", async () => {
     try { await post("auth.php?action=logout", {}); } catch (_) { /* Session evtl. abgelaufen */ }
     csrfToken = "";
     $("user-info").classList.add("hidden");
+    clearAuthForms();
     showView("view-auth");
 });
 
@@ -317,11 +443,24 @@ function onLoggedIn(username) {
 
 async function checkSession() {
     // Passwort-Reset-Link aus URL-Hash (#reset=TOKEN)
-    const match = location.hash.match(/^#reset=([a-f0-9]{64})$/);
-    if (match) {
-        resetToken = match[1];
+    const resetMatch = location.hash.match(/^#reset=([a-f0-9]{64})$/);
+    if (resetMatch) {
+        resetToken = resetMatch[1];
         history.replaceState(null, "", location.pathname);
         showView("view-reset");
+        return;
+    }
+    // Konto-Aktivierungs-Link (#activate=TOKEN)
+    const activateMatch = location.hash.match(/^#activate=([a-f0-9]{64})$/);
+    if (activateMatch) {
+        history.replaceState(null, "", location.pathname);
+        showView("view-auth");
+        try {
+            const data = await post("auth.php?action=activate", { token: activateMatch[1] });
+            showAuthMessage(data.message, false);
+        } catch (err) {
+            showAuthMessage(err.message);
+        }
         return;
     }
     try {
@@ -383,9 +522,10 @@ $("form-reset").addEventListener("submit", async (e) => {
             token: resetToken,
             password: p1,
         });
-        alert(data.message);
         resetToken = "";
+        clearAuthForms();
         showView("view-auth");
+        showAuthMessage(data.message, false);
     } catch (err) {
         msg.textContent = err.message;
         msg.classList.remove("hidden");

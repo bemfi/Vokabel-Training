@@ -47,10 +47,10 @@ switch ($action) {
         $note = trim($body['note'] ?? '');
 
         if ($word1 === '' || $word2 === '') {
-            json_error('Wort 1 und Wort 2 sind Pflichtfelder.');
+            json_error('Wort 1 und Wort 2 sind Pflichtfelder.', 400, 'vocab_fields_missing');
         }
         if ($word3 !== '' && empty($dataset['lang3'])) {
-            json_error('Dieser Datensatz hat keine dritte Sprache.');
+            json_error('Dieser Datensatz hat keine dritte Sprache.', 400, 'no_third_language');
         }
 
         $stmt = db()->prepare(
@@ -67,7 +67,7 @@ switch ($action) {
         );
         $stmt->execute([$id, $userId]);
         if (!$stmt->fetch()) {
-            json_error('Vokabel nicht gefunden.', 404);
+            json_error('Vokabel nicht gefunden.', 404, 'vocab_not_found');
         }
 
         $word1 = trim($body['word1'] ?? '');
@@ -76,7 +76,7 @@ switch ($action) {
         $note = trim($body['note'] ?? '');
 
         if ($word1 === '' || $word2 === '') {
-            json_error('Wort 1 und Wort 2 sind Pflichtfelder.');
+            json_error('Wort 1 und Wort 2 sind Pflichtfelder.', 400, 'vocab_fields_missing');
         }
 
         $stmt = db()->prepare(
@@ -101,10 +101,10 @@ switch ($action) {
 
         $rows = $body['rows'] ?? [];
         if (!is_array($rows) || count($rows) === 0) {
-            json_error('Keine Zeilen zum Importieren.');
+            json_error('Keine Zeilen zum Importieren.', 400, 'import_empty');
         }
         if (count($rows) > 5000) {
-            json_error('Maximal 5000 Zeilen pro Import.');
+            json_error('Maximal 5000 Zeilen pro Import.', 400, 'import_too_large');
         }
 
         $pdo = db();
@@ -136,5 +136,5 @@ switch ($action) {
         json_response(['ok' => true, 'imported' => $imported, 'skipped' => $skipped]);
 
     default:
-        json_error('Unbekannte Aktion.', 404);
+        json_error('Unbekannte Aktion.', 404, 'unknown_action');
 }
