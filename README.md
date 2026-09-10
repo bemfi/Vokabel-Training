@@ -1,25 +1,56 @@
-# 📚 Vokabeltrainer – Web-App für All-Inkl
+# Vokabeltrainer – Web-App im IT-Hummel-Design
 
-Mehrbenutzerfähiger Vokabeltrainer mit bis zu **3 Sprachen pro Datensatz** (z.B. Deutsch · Italienisch · Englisch), Excel-Import und konfigurierbarem Lernziel.
+Mehrbenutzerfähiger Vokabeltrainer mit bis zu **3 Sprachen pro Datensatz** (z.B. Deutsch · Italienisch · Englisch), Excel-Import und konfigurierbarem Lernziel. Design und Branding angelehnt an [ithummel.com](https://ithummel.com).
 
-Läuft auf klassischem PHP-Webhosting (**All-Inkl**-kompatibel) – kein Framework, kein Composer, einfach per FTP hochladen.
+Läuft auf klassischem PHP-Webhosting (**All-Inkl**-kompatibel) – **kein Framework, kein Build-Schritt, kein Composer**. Hochladen per FTP genügt.
 
 ---
 
 ## 🌐 Funktionen
 
-- 👥 **Mehrere Nutzer** mit E-Mail-Registrierung/Login (Passwörter sicher gehasht)
+### Nutzer & Konten
+- 👥 **Mehrere Nutzer** mit E-Mail-Registrierung/Login (Passwörter bcrypt-gehasht)
 - 🔑 **Passwort-Reset per E-Mail** (Token-Link, 1 Stunde gültig, Einmalverwendung)
-- 🌓 **Dark & Light Mode** (folgt Systemeinstellung, manuell umschaltbar)
-- 🌐 **Oberfläche in Deutsch und Englisch** umschaltbar
+
+### Lernen
 - 🗂️ **Beliebig viele Datensätze** pro Nutzer (z.B. "Italienisch Lektion 1") mit Fortschrittsbalken
 - 🌍 **2 oder 3 Sprachen** pro Datensatz – alle Richtungen werden abgefragt (bei 3 Sprachen: 6 Richtungen)
 - 📥 **Excel/CSV-Import** direkt im Browser (Spalte A/B/C = Sprachen, Spalte D = Notiz)
 - 🔀 **Zufällige Abfragereihenfolge** über alle offenen Vokabel/Richtungs-Kombinationen
 - ⚙️ **Einstellbares Lernziel**: Wort gilt als "gekonnt", wenn es z.B. 3× in *jeder* Richtung richtig war (1–20 einstellbar)
 - 🔄 Optional: Zähler bei falscher Antwort auf 0 zurücksetzen
-- 📊 Fortschrittsanzeige pro Datensatz, Fortschritt jederzeit zurücksetzbar
 - ☑️ Abfragerichtungen einzeln wählbar (z.B. nur Deutsch → Italienisch)
+- 📊 Fortschrittsanzeige pro Datensatz, Fortschritt jederzeit zurücksetzbar
+
+### Oberfläche
+- 🎨 **IT-Hummel-Branding**: offizielle Markenfarben (Navy, Brand-Blau, Orange), Logo und Favicon von ithummel.com
+- 🌓 **Dark & Light Mode** (folgt Systemeinstellung, manuell umschaltbar, ohne Aufblitzen beim Laden)
+- 🌐 **Oberfläche in Deutsch und Englisch** umschaltbar (automatische Browsersprach-Erkennung)
+- 📱 Responsive – nutzbar auf Desktop, Tablet und Smartphone
+
+### Rechtliches
+- ⚖️ **Footer mit Impressum und Datenschutzerklärung** (zweisprachig DE/EN)
+- 🗑️ **Konto-Löschen-Funktion** (Art. 17 DSGVO – entfernt alle Nutzerdaten unwiderruflich)
+- 🚫 **Keine Drittanbieter**: keine CDNs, externen Fonts, Tracker oder Analyse-Tools – alles wird lokal ausgeliefert
+
+---
+
+## 🏗️ Architektur
+
+**Klassische 3-Schichten-Anwendung ohne Framework** – bewusst einfach gehalten, damit sie auf Shared Hosting läuft und langfristig wartbar bleibt:
+
+```
+Browser (SPA)                PHP-API                    MySQL/MariaDB
+┌──────────────┐  JSON/HTTPS  ┌──────────────┐  PDO       ┌────────────┐
+│ index.html  │ ───────────▶ │ api/*.php    │ ───────▶ │ 6 Tabellen │
+│ js/app.js   │ ◀─────────── │ (bootstrap)  │ ◀─────── │ (schema.sql)│
+│ css/style.css│              └──────────────┘           └────────────┘
+└──────────────┘
+```
+
+- **Frontend**: Vanilla JS als Single-Page-App. Excel-Parsing läuft komplett im Browser (SheetJS, lokal gehostet – kein CDN) – der Server bekommt nur JSON.
+- **Backend**: Jede PHP-Datei ist ein Endpunkt mit `?action=`-Routing. `bootstrap.php` bündelt alles Gemeinsame (Session, DB, CSRF, Rate-Limit).
+- **Datenbank**: Fortschritt wird pro **Vokabel + Richtung** gespeichert (`progress`-Tabelle, Richtung als `'1>2'` codiert).
 
 ---
 
@@ -27,19 +58,42 @@ Läuft auf klassischem PHP-Webhosting (**All-Inkl**-kompatibel) – kein Framewo
 
 ```
 Vokabel-Training/
-├── index.html          # Single-Page-Frontend
-├── css/style.css
-├── js/app.js
-├── api/                # PHP-Backend (JSON-API)
-│   ├── bootstrap.php   # DB-Verbindung, Session, Helfer
-│   ├── auth.php        # Registrierung / Login / Logout
-│   ├── datasets.php    # Datensätze verwalten
-│   ├── vocab.php       # Vokabeln + Excel-Import
-│   ├── training.php    # Abfrage-Logik + Statistik
-│   ├── config.example.php
-│   └── .htaccess       # schützt config.php
-└── sql/schema.sql      # Datenbankschema (MySQL/MariaDB)
+├── index.html            # Single-Page-Frontend (alle Views, i18n-Attribute)
+├── favicon.ico           # Favicon (von ithummel.com)
+├── css/
+│   └── style.css         # Design-Tokens (CSS-Variablen), Light/Dark Theme
+├── js/
+│   ├── app.js            # Gesamte Frontend-Logik (i18n, Auth, CRUD, Training)
+│   └── xlsx.full.min.js  # SheetJS lokal gehostet (DSGVO: kein CDN)
+├── img/
+│   ├── hummel-logo.png   # Offizielles IT-Hummel-Logo
+│   └── icon-192.png      # App-Icon / Apple-Touch-Icon
+├── api/                  # PHP-Backend (JSON-API)
+│   ├── bootstrap.php     # Gemeinsame Basis: Session, DB, CSRF, Rate-Limit
+│   ├── auth.php          # Registrierung, Login, Logout, Passwort-Reset
+│   ├── datasets.php      # Datensätze: CRUD + Fortschritt-Reset
+│   ├── vocab.php         # Vokabeln: CRUD + Bulk-Import
+│   ├── training.php      # Abfrage-Logik, Antwort-Prüfung, Statistik
+│   ├── config.example.php# Vorlage – als config.php kopieren und ausfüllen
+│   └── .htaccess         # Schützt config.php & bootstrap.php vor Direktzugriff
+└── sql/
+    └── schema.sql        # Datenbankschema (6 Tabellen, idempotent)
 ```
+
+---
+
+## 🔌 API-Übersicht
+
+Alle Endpunkte antworten mit JSON. Schreibende Aktionen (POST) benötigen den `X-CSRF-Token`-Header (Token kommt von `auth.php?action=me`).
+
+| Endpunkt | Aktionen |
+|---|---|
+| `api/auth.php` | `register`, `login`, `logout`, `me`, `request_reset`, `reset_password`, `delete_account` |
+| `api/datasets.php` | `list`, `create`, `update`, `delete`, `reset_progress` |
+| `api/vocab.php` | `list`, `add`, `update`, `delete`, `import` |
+| `api/training.php` | `next`, `answer`, `stats` |
+
+Jede PHP-Datei enthält im Kopf-Kommentar die genauen Parameter.
 
 ---
 
@@ -167,8 +221,10 @@ return [
 
 ```
 index.html
+favicon.ico
 css/            (kompletter Ordner)
 js/             (kompletter Ordner)
+img/            (kompletter Ordner – Logo & App-Icon)
 api/            (kompletter Ordner – inkl. deiner config.php und der .htaccess!)
 ```
 
@@ -251,17 +307,46 @@ Wenn du den Code aktualisierst (z.B. via Git):
 
 ## 💻 Lokal testen (optional)
 
-Mit PHP ≥ 8.0 und einer lokalen MySQL/MariaDB:
+Voraussetzungen: PHP ≥ 8.1 und eine lokale MySQL/MariaDB (z.B. via XAMPP).
 
 ```bash
-# Schema importieren
+# 1. Datenbank anlegen und Schema importieren
+mysql -u root -p -e "CREATE DATABASE vokabeltrainer CHARACTER SET utf8mb4"
 mysql -u root -p vokabeltrainer < sql/schema.sql
 
-# config.php anpassen, dann:
+# 2. api/config.example.php nach api/config.php kopieren und ausfüllen
+#    (db_name = vokabeltrainer, db_user/db_pass = lokale MySQL-Zugangsdaten)
+
+# 3. PHP-Entwicklungsserver im Projektordner starten
 php -S localhost:8000
 ```
 
 Browser: `http://localhost:8000`
+
+> Hinweis: Der Passwort-Reset-Mailversand funktioniert lokal meist nicht (PHP `mail()` braucht einen konfigurierten Mailserver) – alles andere ist voll testbar.
+
+---
+
+## 🔧 Wartung & Erweiterung
+
+Hinweise für spätere Anpassungen – wo was zu ändern ist:
+
+| Ich möchte … | Datei / Ort |
+|---|---|
+| Texte/Übersetzungen ändern oder Sprache ergänzen | `js/app.js` → `I18N`-Objekt (plus `data-i18n`-Attribute in `index.html`) |
+| Farben/Design anpassen | `css/style.css` → CSS-Variablen in `:root` und `[data-theme="dark"]` |
+| Neuen API-Endpunkt hinzufügen | Neue `case`-Zeile in passender `api/*.php`; gemeinsame Helfer in `bootstrap.php` |
+| Passwort-Regeln ändern | `api/auth.php` → `validate_password()` |
+| Rate-Limits anpassen | `api/bootstrap.php` → `check_rate_limit()`-Defaults bzw. Aufrufe in `auth.php` |
+| Reset-Mail-Text ändern | `api/auth.php` → `send_reset_mail()` |
+| Datenbankfeld ergänzen | `sql/schema.sql` + betroffene `api/*.php` + Formular in `index.html`/`app.js` |
+| Import-Limit (5000 Zeilen) ändern | `api/vocab.php` → `case 'import'` |
+
+**Konventionen im Projekt:**
+- PHP: `declare(strict_types=1)`, Prepared Statements überall, `snake_case` für DB/API-Felder
+- JS: `camelCase`, alle DOM-Zugriffe über den `$()`-Helfer, alle Nutzereingaben durch `escapeHtml()`
+- Jede API-Datei dokumentiert ihre Aktionen im Kopf-Kommentar
+- Keine Build-Tools: was im Repo liegt, läuft 1:1 auf dem Server
 
 ---
 
@@ -279,3 +364,26 @@ Browser: `http://localhost:8000`
 - Ausgaben im Frontend HTML-escaped (kein XSS)
 
 > **Wichtig:** Die Seite muss über **HTTPS** laufen (bei All-Inkl kostenlos per Let's Encrypt im KAS aktivierbar).
+
+---
+
+## ⚖️ Rechtliches (Impressum & DSGVO)
+
+Die App bringt die rechtlich notwendigen Bausteine für den Betrieb in Deutschland mit:
+
+| Baustein | Status | Wo |
+|---|---|---|
+| **Impressum** (§ 5 DDG) | ⚠️ Platzhalter – vor Veröffentlichung ausfüllen! | `index.html` → `view-imprint` |
+| **Datenschutzerklärung** (Art. 13 DSGVO) | ✅ Vorformuliert (DE + EN) | `js/app.js` → `PRIVACY_HTML` |
+| **Recht auf Löschung** (Art. 17 DSGVO) | ✅ Selbstbedienung: „Konto löschen“-Button | Datensatz-Übersicht |
+| **Datenminimierung** | ✅ Nur E-Mail, Benutzername, Passwort-Hash + Inhalte | – |
+| **Kein Cookie-Banner nötig** | ✅ Nur technisch notwendiges Session-Cookie, kein Tracking | – |
+| **Keine Drittanbieter** | ✅ SheetJS lokal gehostet, keine externen Fonts/CDNs | `js/xlsx.full.min.js` |
+| **Login-Versuche** | ✅ IP-Speicherung nur 24h (Missbrauchsschutz, Art. 6 Abs. 1 lit. f) | `login_attempts`-Tabelle |
+
+**Vor der Veröffentlichung noch zu tun:**
+
+1. **Impressum vervollständigen**: In `index.html` (Abschnitt `view-imprint`) die Platzhalter `[Straße und Hausnummer]` und `[PLZ]` durch die echte Anschrift ersetzen – am einfachsten identisch zum Impressum auf ithummel.com.
+2. **Datenschutzerklärung prüfen**: Die vorformulierten Texte in `js/app.js` (Konstante `PRIVACY_HTML`) decken die tatsächliche Datenverarbeitung der App ab – bitte einmal gegenlesen und ggf. an eure Gegebenheiten anpassen.
+
+> **Hinweis:** Diese Vorlagen sind sorgfältig auf die tatsächliche Funktionsweise der App abgestimmt, ersetzen aber keine Rechtsberatung. Im Zweifel kurz anwaltlich prüfen lassen.

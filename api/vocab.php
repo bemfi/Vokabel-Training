@@ -1,4 +1,13 @@
 <?php
+/**
+ * Vokabel-API (erfordert Login)
+ *
+ * GET  ?action=list&dataset_id=N  Vokabeln eines Datensatzes inkl. Lernstatus
+ * POST ?action=add                Einzelne Vokabel anlegen
+ * POST ?action=update             Vokabel bearbeiten
+ * POST ?action=delete             Vokabel löschen
+ * POST ?action=import             Bulk-Import (JSON-Zeilen, vom Frontend geparst)
+ */
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';

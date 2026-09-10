@@ -1,4 +1,15 @@
 <?php
+/**
+ * Auth-API (öffentlich, kein Login nötig)
+ *
+ * POST ?action=register        Konto anlegen (email, username, password)
+ * POST ?action=login           Anmelden (email, password)
+ * POST ?action=logout          Abmelden (benötigt CSRF-Token)
+ * GET  ?action=me              Session-Status + CSRF-Token abfragen
+ * POST ?action=request_reset   Passwort-Reset-Mail anfordern (email)
+ * POST ?action=reset_password  Neues Passwort mit Token setzen (token, password)
+ * POST ?action=delete_account  Konto + alle Daten löschen (password) – Art. 17 DSGVO
+ */
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
@@ -192,6 +203,27 @@ switch ($action) {
         $pdo->commit();
 
         json_response(['ok' => true, 'message' => 'Passwort geändert. Du kannst dich jetzt anmelden.']);
+
+    // Recht auf Löschung (Art. 17 DSGVO): entfernt Konto und via FK-Kaskade
+    // alle Datensätze, Vokabeln, Fortschritte und Reset-Tokens.
+    case 'delete_account':
+        $userId = require_login();
+        $password = $body['password'] ?? '';
+
+        $stmt = db()->prepare('SELECT password_hash FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        $hash = $stmt->fetchColumn();
+
+        if (!$hash || !password_verify($password, (string) $hash)) {
+            json_error('Passwort falsch.', 401);
+        }
+
+        $stmt = db()->prepare('DELETE FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+
+        $_SESSION = [];
+        session_destroy();
+        json_response(['ok' => true]);
 
     default:
         json_error('Unbekannte Aktion.', 404);

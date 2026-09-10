@@ -426,6 +426,40 @@ input[type="checkbox"] { accent-color: var(--brand-orange); width: 1.05rem; heig
 ::-webkit-scrollbar-thumb { background: var(--secondary-hover); border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
+/* ---------- Footer & Rechtliches ---------- */
+footer {
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.footer-inner {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.footer-links { display: flex; gap: 1.2rem; }
+.footer-links a { color: var(--muted); text-decoration: none; }
+.footer-links a:hover { color: var(--primary); text-decoration: underline; }
+
+.legal-card { max-width: 720px; margin: 0 auto; }
+.legal-card h2 { margin-top: 0.8rem; }
+.legal-card h3 { margin: 1.4rem 0 0.4rem; font-size: 1.02rem; }
+.legal-card p, .legal-card li { font-size: 0.92rem; }
+.btn-legal-back { margin-bottom: 0.5rem; }
+
+.account-zone {
+    margin-top: 2.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+    text-align: right;
+}
+
 @media (max-width: 600px) {
     .training-question { font-size: 1.35rem; }
     main { margin-top: 1rem; }

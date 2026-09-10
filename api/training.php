@@ -1,4 +1,11 @@
 <?php
+/**
+ * Trainings-API (erfordert Login)
+ *
+ * GET  ?action=next&dataset_id=N[&directions=1>2,2>1]  Nächste zufällige Frage
+ * POST ?action=answer                                  Antwort prüfen + Fortschritt speichern
+ * GET  ?action=stats&dataset_id=N                      Lernstatistik des Datensatzes
+ */
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';

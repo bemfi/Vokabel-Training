@@ -8,7 +8,8 @@
     <link rel="icon" href="img/icon-192.png" type="image/png" sizes="192x192">
     <link rel="apple-touch-icon" href="img/icon-192.png">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- SheetJS lokal gehostet (DSGVO: kein CDN-Drittanbieter) -->
+    <script src="js/xlsx.full.min.js"></script>
     <script>
         // Theme vor dem Rendern setzen (verhindert Aufblitzen)
         document.documentElement.dataset.theme =
@@ -136,6 +137,10 @@
                 </div>
             </form>
         </div>
+
+        <div class="account-zone">
+            <button id="btn-delete-account" class="btn btn-danger btn-small" data-i18n="deleteAccount">Konto löschen</button>
+        </div>
     </section>
 
     <!-- ===================== VOKABELN VERWALTEN ===================== -->
@@ -238,7 +243,47 @@
         </div>
     </section>
 
+    <!-- ===================== IMPRESSUM ===================== -->
+    <section id="view-imprint" class="view hidden">
+        <div class="card legal-card">
+            <button class="btn btn-secondary btn-small btn-legal-back" data-i18n="back">← Zurück</button>
+            <h2 data-i18n="imprint">Impressum</h2>
+            <p class="hint" data-i18n="imprintLaw">Angaben gemäß § 5 DDG</p>
+            <!-- TODO: Vor Veröffentlichung mit echten Daten füllen (identisch zu ithummel.com/impressum) -->
+            <p>
+                Benjamin Fischer – IT Hummel<br>
+                Weißenhorner Straße 38<br>
+                89269 Vöhringen<br>
+                Deutschland
+            </p>
+            <p>
+                <span data-i18n="contact">Kontakt</span>:<br>
+                E-Mail: <a href="mailto:kontakt@ithummel.com">kontakt@ithummel.com</a>
+            </p>
+            <p class="hint" data-i18n="imprintNote">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV: Benjamin Fischer (Anschrift wie oben)</p>
+        </div>
+    </section>
+
+    <!-- ===================== DATENSCHUTZ ===================== -->
+    <section id="view-privacy" class="view hidden">
+        <div class="card legal-card">
+            <button class="btn btn-secondary btn-small btn-legal-back" data-i18n="back">← Zurück</button>
+            <h2 data-i18n="privacy">Datenschutzerklärung</h2>
+            <div id="privacy-content"></div>
+        </div>
+    </section>
+
 </main>
+
+<footer>
+    <div class="footer-inner">
+        <span>© <span id="footer-year"></span> IT Hummel</span>
+        <nav class="footer-links">
+            <a href="#" id="link-imprint" data-i18n="imprint">Impressum</a>
+            <a href="#" id="link-privacy" data-i18n="privacy">Datenschutz</a>
+        </nav>
+    </div>
+</footer>
 
 <script src="js/app.js"></script>
 </body>

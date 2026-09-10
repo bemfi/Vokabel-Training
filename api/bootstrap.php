@@ -1,4 +1,11 @@
 <?php
+/**
+ * Gemeinsame Basis aller API-Endpunkte:
+ * Session-Härtung, Security-Header, DB-Verbindung (PDO),
+ * JSON-Helfer, CSRF-Schutz, Login-Prüfung, Brute-Force-Schutz.
+ *
+ * Wird von auth.php, datasets.php, vocab.php und training.php eingebunden.
+ */
 declare(strict_types=1);
 
 // ---------------------------------------------------------------

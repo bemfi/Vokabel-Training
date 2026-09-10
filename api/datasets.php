@@ -1,4 +1,13 @@
 <?php
+/**
+ * Datensätze-API (erfordert Login)
+ *
+ * GET  ?action=list            Alle Datensätze des Nutzers inkl. Fortschritt
+ * POST ?action=create          Neuen Datensatz anlegen
+ * POST ?action=update          Datensatz bearbeiten
+ * POST ?action=delete          Datensatz inkl. Vokabeln löschen
+ * POST ?action=reset_progress  Lernfortschritt des Datensatzes zurücksetzen
+ */
 declare(strict_types=1);
 
 require __DIR__ . '/bootstrap.php';
@@ -10,8 +19,17 @@ $body = request_body();
 switch ($action) {
 
     case 'list':
+        // vocab_count + mastered_count in einer Query (vermeidet N+1).
+        // Eine Vokabel ist "gekonnt", wenn alle Richtungen (2 Sprachen = 2,
+        // 3 Sprachen = 6) das Lernziel erreicht haben.
         $stmt = db()->prepare(
-            'SELECT d.*, COUNT(v.id) AS vocab_count
+            'SELECT d.*,
+                    COUNT(v.id) AS vocab_count,
+                    COALESCE(SUM(
+                        (SELECT COUNT(*) FROM progress p
+                         WHERE p.vocab_id = v.id AND p.correct_count >= d.required_correct)
+                        >= IF(d.lang3 IS NULL, 2, 6)
+                    ), 0) AS mastered_count
              FROM datasets d
              LEFT JOIN vocab v ON v.dataset_id = d.id
              WHERE d.user_id = ?
@@ -19,24 +37,7 @@ switch ($action) {
              ORDER BY d.created_at DESC'
         );
         $stmt->execute([$userId]);
-        $datasets = $stmt->fetchAll();
-
-        // Fortschritt: Anzahl vollständig gekonnter Vokabeln pro Datensatz
-        foreach ($datasets as &$ds) {
-            $langCount = empty($ds['lang3']) ? 2 : 3;
-            $dirCount = $langCount * ($langCount - 1);
-            $stmt = db()->prepare(
-                'SELECT COUNT(*) FROM vocab v
-                 WHERE v.dataset_id = ?
-                 AND (SELECT COUNT(*) FROM progress p
-                      WHERE p.vocab_id = v.id AND p.correct_count >= ?) >= ?'
-            );
-            $stmt->execute([$ds['id'], $ds['required_correct'], $dirCount]);
-            $ds['mastered_count'] = (int) $stmt->fetchColumn();
-        }
-        unset($ds);
-
-        json_response(['datasets' => $datasets]);
+        json_response(['datasets' => $stmt->fetchAll()]);
 
     case 'create':
         $name = trim($body['name'] ?? '');

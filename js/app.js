@@ -1,4 +1,16 @@
-/* Vokabeltrainer – Frontend-Logik */
+/**
+ * Vokabeltrainer – Frontend-Logik (Single-Page-App, kein Framework)
+ *
+ * Aufbau (in dieser Reihenfolge):
+ *   1. Übersetzungen (I18N) + t()-Helfer
+ *   2. Theme (Dark/Light)
+ *   3. API-Helfer (fetch mit CSRF-Token)
+ *   4. Auth (Login/Registrierung/Passwort-Reset)
+ *   5. Datensätze (CRUD)
+ *   6. Vokabeln (CRUD + Excel-Import via SheetJS)
+ *   7. Training (Abfrage-Loop + Statistik)
+ *   8. Umschalter + Start
+ */
 "use strict";
 
 const API = "api";
@@ -55,6 +67,12 @@ const I18N = {
         wrongFb: (e) => `❌ Falsch. Richtige Antwort: "${e}"`,
         resetProgressConfirm: "Gesamten Lernfortschritt dieses Datensatzes zurücksetzen?",
         statsText: (mw, vt, cm, ct) => `${mw} von ${vt} Vokabeln vollständig gekonnt · ${cm} von ${ct} Richtungs-Kombinationen gemeistert`,
+        imprint: "Impressum", privacy: "Datenschutz",
+        imprintLaw: "Angaben gemäß § 5 DDG", contact: "Kontakt",
+        imprintNote: "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV: Benjamin Fischer (Anschrift wie oben)",
+        deleteAccount: "Konto löschen",
+        deleteAccountPrompt: "Zum endgültigen Löschen deines Kontos samt aller Vokabeln und Lernstände gib bitte dein Passwort ein:",
+        deleteAccountDone: "Dein Konto und alle Daten wurden gelöscht.",
     },
     en: {
         appTitle: "Vocabulary Trainer",
@@ -104,7 +122,65 @@ const I18N = {
         wrongFb: (e) => `❌ Wrong. Correct answer: "${e}"`,
         resetProgressConfirm: "Reset all learning progress for this dataset?",
         statsText: (mw, vt, cm, ct) => `${mw} of ${vt} words fully mastered · ${cm} of ${ct} direction combinations mastered`,
+        imprint: "Legal notice", privacy: "Privacy policy",
+        imprintLaw: "Information according to § 5 DDG (German law)", contact: "Contact",
+        imprintNote: "Responsible for content according to § 18 (2) MStV: Benjamin Fischer (address as above)",
+        deleteAccount: "Delete account",
+        deleteAccountPrompt: "To permanently delete your account including all vocabulary and progress, please enter your password:",
+        deleteAccountDone: "Your account and all data have been deleted.",
     },
+};
+
+/* Datenschutzerklärung als HTML pro Sprache (nur statische, geprüfte Inhalte) */
+const PRIVACY_HTML = {
+    de: `
+        <p class="hint">Stand: September 2026</p>
+        <h3>1. Verantwortlicher</h3>
+        <p>Benjamin Fischer – IT Hummel, Kontakt: <a href="mailto:kontakt@ithummel.com">kontakt@ithummel.com</a> (vollständige Anschrift siehe Impressum).</p>
+        <h3>2. Welche Daten verarbeitet werden</h3>
+        <ul>
+            <li><strong>Kontodaten:</strong> E-Mail-Adresse, Benutzername, Passwort (nur als bcrypt-Hash gespeichert).</li>
+            <li><strong>Inhaltsdaten:</strong> Deine angelegten Datensätze, Vokabeln und Lernfortschritte.</li>
+            <li><strong>Sicherheitsdaten:</strong> IP-Adresse und Zeitpunkt fehlgeschlagener Anmeldeversuche (Schutz vor Missbrauch, automatische Löschung nach 24 Stunden).</li>
+            <li><strong>Session-Cookie:</strong> Technisch notwendiges Cookie für die Anmeldung (wird beim Schließen des Browsers bzw. Abmelden gelöscht).</li>
+            <li><strong>Lokale Einstellungen:</strong> Sprache und Farbschema werden nur in deinem Browser gespeichert (localStorage) und nicht übertragen.</li>
+        </ul>
+        <h3>3. Zweck und Rechtsgrundlage</h3>
+        <p>Die Verarbeitung erfolgt zur Bereitstellung des Vokabeltrainers (Art. 6 Abs. 1 lit. b DSGVO – Vertragserfüllung) sowie zur Missbrauchsabwehr (Art. 6 Abs. 1 lit. f DSGVO – berechtigtes Interesse).</p>
+        <h3>4. E-Mail-Versand</h3>
+        <p>E-Mails werden ausschließlich für das Zurücksetzen des Passworts versendet. Es gibt keinen Newsletter und keine Weitergabe an Dritte.</p>
+        <h3>5. Hosting</h3>
+        <p>Die Anwendung wird bei der ALL-INKL.COM – Neue Medien Münnich (Deutschland) gehostet. Der Hoster verarbeitet Server-Logdaten (z.B. IP-Adressen) nach seinen eigenen Datenschutzbestimmungen.</p>
+        <h3>6. Keine Drittanbieter-Dienste</h3>
+        <p>Es werden keine Analyse-Tools, Tracking-Dienste, externen Fonts oder CDNs eingebunden. Alle Skripte werden lokal ausgeliefert.</p>
+        <h3>7. Speicherdauer und Löschung</h3>
+        <p>Deine Daten bleiben gespeichert, solange dein Konto besteht. Du kannst dein Konto jederzeit selbst löschen (Button „Konto löschen“ in der Datensatz-Übersicht) – dabei werden alle Vokabeln, Lernstände und Kontodaten unwiderruflich entfernt.</p>
+        <h3>8. Deine Rechte</h3>
+        <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO) sowie das Recht auf Beschwerde bei einer Aufsichtsbehörde (Art. 77 DSGVO). Wende dich dazu an die oben genannte Kontaktadresse.</p>`,
+    en: `
+        <p class="hint">Last updated: September 2026</p>
+        <h3>1. Controller</h3>
+        <p>Benjamin Fischer – IT Hummel, contact: <a href="mailto:kontakt@ithummel.com">kontakt@ithummel.com</a> (full address see legal notice).</p>
+        <h3>2. Data being processed</h3>
+        <ul>
+            <li><strong>Account data:</strong> email address, username, password (stored as bcrypt hash only).</li>
+            <li><strong>Content data:</strong> your datasets, vocabulary and learning progress.</li>
+            <li><strong>Security data:</strong> IP address and time of failed login attempts (abuse protection, automatically deleted after 24 hours).</li>
+            <li><strong>Session cookie:</strong> technically required cookie for signing in (deleted when closing the browser or signing out).</li>
+            <li><strong>Local settings:</strong> language and colour scheme are stored in your browser only (localStorage) and never transmitted.</li>
+        </ul>
+        <h3>3. Purpose and legal basis</h3>
+        <p>Processing is carried out to provide the vocabulary trainer (Art. 6(1)(b) GDPR – performance of contract) and to prevent abuse (Art. 6(1)(f) GDPR – legitimate interest).</p>
+        <h3>4. Emails</h3>
+        <p>Emails are sent exclusively for password resets. There is no newsletter and no sharing with third parties.</p>
+        <h3>5. Hosting</h3>
+        <p>The application is hosted by ALL-INKL.COM – Neue Medien Münnich (Germany). The host processes server log data (e.g. IP addresses) according to its own privacy policy.</p>
+        <h3>6. No third-party services</h3>
+        <p>No analytics, tracking services, external fonts or CDNs are used. All scripts are served locally.</p>
+        <h3>7. Retention and deletion</h3>
+        <p>Your data is stored as long as your account exists. You can delete your account yourself at any time (“Delete account” button in the dataset overview) – this irreversibly removes all vocabulary, progress and account data.</p>
+        <h3>8. Your rights</h3>
+        <p>You have the right of access, rectification, erasure, restriction of processing, data portability and objection (Art. 15–21 GDPR) as well as the right to lodge a complaint with a supervisory authority (Art. 77 GDPR). Please use the contact address above.</p>`,
 };
 
 let lang = localStorage.getItem("vt-lang") || (navigator.language.startsWith("de") ? "de" : "en");
@@ -707,12 +783,56 @@ async function loadStats() {
 }
 
 // ---------------------------------------------------------------
+// Rechtliches: Impressum / Datenschutz / Konto löschen
+// ---------------------------------------------------------------
+let viewBeforeLegal = "view-auth";
+
+function currentViewId() {
+    const visible = [...document.querySelectorAll(".view")].find((v) => !v.classList.contains("hidden"));
+    return visible ? visible.id : "view-auth";
+}
+
+function openLegal(viewId) {
+    viewBeforeLegal = currentViewId();
+    if (viewId === "view-privacy") {
+        $("privacy-content").innerHTML = PRIVACY_HTML[lang] ?? PRIVACY_HTML.de;
+    }
+    showView(viewId);
+    window.scrollTo(0, 0);
+}
+
+$("link-imprint").addEventListener("click", (e) => { e.preventDefault(); openLegal("view-imprint"); });
+$("link-privacy").addEventListener("click", (e) => { e.preventDefault(); openLegal("view-privacy"); });
+
+document.querySelectorAll(".btn-legal-back").forEach((btn) => {
+    btn.addEventListener("click", () => showView(viewBeforeLegal));
+});
+
+$("btn-delete-account").addEventListener("click", async () => {
+    const password = prompt(t("deleteAccountPrompt"));
+    if (!password) return;
+    try {
+        await post("auth.php?action=delete_account", { password });
+        alert(t("deleteAccountDone"));
+        csrfToken = "";
+        $("user-info").classList.add("hidden");
+        showView("view-auth");
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+// ---------------------------------------------------------------
 // Sprach- und Theme-Umschalter
 // ---------------------------------------------------------------
 $("btn-lang").addEventListener("click", () => {
     lang = lang === "de" ? "en" : "de";
     localStorage.setItem("vt-lang", lang);
     applyI18n();
+    // Geöffnete Datenschutzerklärung in neuer Sprache neu rendern
+    if (currentViewId() === "view-privacy") {
+        $("privacy-content").innerHTML = PRIVACY_HTML[lang] ?? PRIVACY_HTML.de;
+    }
 });
 
 $("btn-theme").addEventListener("click", () => {
@@ -724,6 +844,7 @@ $("btn-theme").addEventListener("click", () => {
 // ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
+$("footer-year").textContent = new Date().getFullYear();
 applyTheme();
 applyI18n();
 checkSession();
